@@ -1,6 +1,7 @@
 package it.polito.tdp.borders.db;
 
 import it.polito.tdp.borders.model.Country;
+import it.polito.tdp.borders.model.CountryPair;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -50,12 +51,68 @@ public class BordersDAO {
 		return null ;
 	}
 	
+	public List<CountryPair> getCountryPairs(int anno) {
+		
+		String sql = "select c1.CCode as ccode1, c1.StateAbb as stateabb1, c1.StateNme as statenme1, " +
+				"c2.CCode as ccode2, c2.StateAbb as stateabb2, c2.StateNme as statenme2 " + 
+				"from contiguity, country c1, country c2 " + 
+				"where c1.CCode=contiguity.state1no " + 
+				"and c2.CCode=contiguity.state2no " + 
+				"and contiguity.conttype=1 " + 
+				"and contiguity.year <= ?" ;
+		
+		try {
+			Connection conn = DBConnect.getConnection() ;
+
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			
+			st.setInt(1, anno);
+			
+			ResultSet rs = st.executeQuery() ;
+			
+			List<CountryPair> list = new LinkedList<CountryPair>() ;
+			
+			while( rs.next() ) {
+				
+				Country c1 = new Country(
+						rs.getInt("ccode1"),
+						rs.getString("StateAbb1"), 
+						rs.getString("StateNme1")) ;
+
+				Country c2 = new Country(
+						rs.getInt("ccode2"),
+						rs.getString("StateAbb2"), 
+						rs.getString("StateNme2")) ;
+
+				list.add(new CountryPair(c1, c2)) ;
+			}
+			
+			conn.close() ;
+			
+			return list ;
+			
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return null ;
+
+		
+	}
+	
 	public static void main(String[] args) {
 		List<Country> list ;
 		BordersDAO dao = new BordersDAO() ;
 		list = dao.loadAllCountries() ;
 		for(Country c: list) {
 			System.out.println(c);
+		}
+		
+		List<CountryPair> cplist = dao.getCountryPairs(2000) ;
+		for(CountryPair cp: cplist) {
+			System.out.format("%s-%s\n", cp.getC1().getStateAbb(), cp.getC2().getStateAbb());
 		}
 	}
 	
