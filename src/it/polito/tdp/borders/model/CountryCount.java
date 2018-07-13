@@ -49,7 +49,14 @@ public class CountryCount implements Comparable<CountryCount> {
 
 	@Override
 	public String toString() {
-		return "[" + country + "=" + num + "]";
+		
+		StringBuilder builder = new StringBuilder();
+		
+		builder.append(country.getStateAbb() + "\n");
+		builder.append(country.getStateName() + " " + num + "\n");
+		builder.append("\n");
+		
+		return builder.toString();
 	}
 
 

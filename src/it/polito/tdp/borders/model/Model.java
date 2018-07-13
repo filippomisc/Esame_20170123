@@ -4,81 +4,121 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import javax.naming.spi.DirStateFactory.Result;
+
+import org.jgrapht.Graphs;
 import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.SimpleDirectedGraph;
 import org.jgrapht.graph.SimpleGraph;
 
 import it.polito.tdp.borders.db.BordersDAO;
 
 public class Model {
 	
-	private List<Country> countries ;
+	private List<Country> countries;
+	private SimpleDirectedGraph<Country, DefaultEdge> graph ;
+	private BordersDAO dao;
+	
 	
 
-	private SimpleGraph<Country, DefaultEdge> graph ;
-	
-	
+
+	public Model() {
+
+		dao = new BordersDAO();
+		countries = dao.loadAllCountries();
+		graph = new SimpleDirectedGraph<>(DefaultEdge.class);
+	}
 
 	public void createGraph(int anno) {
 		
-		BordersDAO dao = new BordersDAO() ;
+		Graphs.addAllVertices(graph, countries);
+		System.out.println("vertici creati: " + graph.vertexSet().size());
 		
-		List<CountryPair> cplist = dao.getCountryPairs(anno) ;
+		List<CountryPair> confinanti = new ArrayList<CountryPair>(dao.getCountryPairs(anno));
 		
-		if(cplist==null || cplist.isEmpty())
-			throw new RuntimeException("No country pairs for specified year") ;
-		
-		graph = new SimpleGraph<>(DefaultEdge.class) ;
-		
-		for(CountryPair cp : cplist) {
-			graph.addVertex(cp.getC1()) ; // se c'è già, il Set lo rifiuta
-			graph.addVertex(cp.getC2()) ;
+		for (CountryPair countryPair : confinanti) {
 			
-			graph.addEdge(cp.getC1(), cp.getC2()) ;
-		}
-		
-		countries = new ArrayList<>( graph.vertexSet() ) ;
-		Collections.sort(countries);
-		
-	}
-	
-	public List<CountryCount> getCountryCounts() {
-		List<CountryCount> stats = new ArrayList<>() ;
-		
-		for(Country c: graph.vertexSet()) {
-			stats.add( new CountryCount(c, graph.degreeOf(c))) ;
-		}
-		
-		Collections.sort(stats);
-		
-		return stats ;
-	}
-	
-	public static void main(String[] args) {
-		Model m = new Model() ;
-		
-		m.createGraph(1900);
-		
-		System.out.format("%d vertices, %d edges\n", m.graph.vertexSet().size(),
-				m.graph.edgeSet().size());
-		
-		List<CountryCount> stats = m.getCountryCounts() ;
-		System.out.println(stats);
-	}
+			
+			Country c1 = new Country(countryPair.getC1().getcCode(), countryPair.getC1().getStateAbb(), countryPair.getC1().getStateName());
+			
 
+			Country c2 = new Country(countryPair.getC2().getcCode(), countryPair.getC2().getStateAbb(), countryPair.getC2().getStateName());
+			
+			graph.addEdge(c1, c2);
+
+		}
+		
+		System.out.println("archi creati: " + graph.edgeSet().size());
+	}
+	
+	
+	public List<CountryCount> countryCounts(){
+		
+		ArrayList<CountryCount> cCounts = new ArrayList<CountryCount>();
+		
+		for (Country c : graph.vertexSet()) {
+			
+			CountryCount countryCount = new CountryCount(c, graph.inDegreeOf(c));
+			
+			cCounts.add(countryCount);
+			
+		}
+		
+		Collections.sort(cCounts);
+		
+		
+		return cCounts;
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+//	public List<CountryCount> getCountryCounts() {
+//		List<CountryCount> stats = new ArrayList<>() ;
+//		
+//		for(Country c: graph.vertexSet()) {
+//			stats.add( new CountryCount(c, graph.degreeOf(c))) ;
+//		}
+//		
+//		Collections.sort(stats);
+//		
+//		return stats ;
+//	}
+	
+	
 	
 	public List<Country> getCountries() {
 		return countries;
 	}
 
-	// package-level visibility (only needed by simulator)
-	SimpleGraph<Country, DefaultEdge> getGraph() {
-		return graph;
-	}
+//	// package-level visibility (only needed by simulator)
+//	SimpleGraph<Country, DefaultEdge> getGraph() {
+//		return graph;
+//	}
 
 	public List<CountryCount> simulaImmigrazione(Country iniziale) {
-		Simula simula = new Simula(this, iniziale) ;
-		simula.run(); 
-		
+
 		return null;
 	}
 

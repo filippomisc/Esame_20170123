@@ -44,7 +44,7 @@ public class BordersDAO {
 			
 			
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			System.err.println("errore della query");				
 			e.printStackTrace();
 		}
 		
@@ -60,6 +60,8 @@ public class BordersDAO {
 				"and c2.CCode=contiguity.state2no " + 
 				"and contiguity.conttype=1 " + 
 				"and contiguity.year <= ?" ;
+		//AND contiguity.state1no<contiguity.state2no 
+		//da usare in caso il grafo sia unidirezionale
 		
 		try {
 			Connection conn = DBConnect.getConnection() ;
@@ -93,13 +95,59 @@ public class BordersDAO {
 			
 			
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+			System.err.println("errore della query");				
 			e.printStackTrace();
 		}
 		
 		return null ;
 
 		
+	}
+	
+	public List<Country> getCountryFromYear(int anno){
+			
+			String sql = "select * \n" + 
+					"from country\n" + 
+					"where CCode in (\n" + 
+					"	select state1no\n" + 
+					"	from contiguity\n" + 
+					"	where year <= ?)" ;
+			
+			try {
+				Connection conn = DBConnect.getConnection() ;
+
+				PreparedStatement st = conn.prepareStatement(sql) ;
+				
+				st.setInt(1, anno);
+				
+				ResultSet rs = st.executeQuery() ;
+				
+				List<Country> list = new LinkedList<Country>() ;
+				
+				while( rs.next() ) {
+					
+					Country c = new Country(
+							rs.getInt("ccode"),
+							rs.getString("StateAbb"), 
+							rs.getString("StateNme")) ;
+
+
+					list.add(c) ;
+				}
+				
+				conn.close() ;
+				
+				return list;
+				
+				
+			} catch (SQLException e) {
+				System.err.println("errore della query");				
+				e.printStackTrace();
+			}
+			
+			return null ;
+
+			
 	}
 	
 	public static void main(String[] args) {
